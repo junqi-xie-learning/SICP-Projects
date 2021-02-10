@@ -6,7 +6,7 @@ If you found any mistakes in the solutions, please create an issue or contact me
 
 ## Environment Setup
 
-* This repository was tested with the [MIT 6.001 Scheme implementations](https://ocw.mit.edu/courses/electrical-engineering-and-computer-science/6-001-structure-and-interpretation-of-computer-programs-spring-2005/tools/).
+* This repository was tested with MIT/GNU Scheme 10.1.10 on Ubuntu 20.10.
 
 ## Current Progress
 
