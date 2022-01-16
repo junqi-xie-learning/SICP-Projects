@@ -41,7 +41,9 @@
 (define (eval-if exp env)
   (if (m-eval (if-predicate exp) env)
       (m-eval (if-consequent exp) env)
-      (m-eval (if-alternative exp) env)))
+      (if (null? (if-alternative-clause exp))
+          #f
+          (m-eval (if-alternative exp) env))))
 
 (define (eval-sequence exps env)
   (cond ((last-exp? exps) (m-eval (first-exp exps) env))
@@ -172,8 +174,7 @@
         (else (error "Unknown expression type -- NAMES-USED-IN" exp))))
 
 
-#|
-some test cases:
+; some test cases:
 
 (names-used-in
  '(do (display (* loop x x))
@@ -195,7 +196,6 @@ some test cases:
 
 (fresh-symbol '(+ not z val y x))
 ;Value: +notzvalyxunused
-|#
 
 ;;;;;;;;;;;;;;;;;;;;; edwin MAGIC - within the darkness magic lurks
 

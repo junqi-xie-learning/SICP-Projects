@@ -35,8 +35,9 @@
 (define (make-lambda parms body) (cons 'lambda (cons parms body)))
 
 (define (if? exp) (tagged-list? exp 'if))
-(define (if-predicate exp) (cadr exp)) 
-(define (if-consequent exp) (caddr exp)) 
+(define (if-predicate exp) (cadr exp))
+(define (if-consequent exp) (caddr exp))
+(define (if-alternative-clause exp) (cdddr exp))
 (define (if-alternative exp) (cadddr exp))
 (define (make-if pred conseq alt) (list 'if pred conseq alt))
 
