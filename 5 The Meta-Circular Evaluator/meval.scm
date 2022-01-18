@@ -9,6 +9,7 @@
         ((variable? exp) (lookup-variable-value exp env))    
         ((quoted? exp) (text-of-quotation exp))
         ((assignment? exp) (eval-assignment exp env))
+        ((reversion? exp) (eval-reversion exp env))
         ((definition? exp) (eval-definition exp env))
         ((if? exp) (eval-if exp env))
         ((lambda? exp)
@@ -16,7 +17,8 @@
         ((begin? exp) (eval-sequence (begin-actions exp) env))
         ((cond? exp) (m-eval (cond->if exp) env))
         ((let? exp) (m-eval (let->application exp) env))
-;        ((do-while? exp) (eval-do-while exp env))
+        ((let*? exp) (m-eval (let*->nested-lets exp) env))
+        ((do-while? exp) (m-eval (do-while->nested-loops exp) env))
         ((application? exp)
          (m-apply (m-eval (operator exp) env)
                 (list-of-values (operands exp) env)))
@@ -55,6 +57,10 @@
                        (m-eval (assignment-value exp) env)
                        env))
 
+(define (eval-reversion exp env)
+  (unset-variable-value! (assignment-variable exp)
+                         env))
+
 (define (eval-definition exp env)
   (define-variable! (definition-variable exp)
                     (m-eval (definition-value exp) env)
@@ -66,6 +72,26 @@
         (body (let-body expr)))
     (make-application (make-lambda names body)
                       values)))
+
+(define (unfold-let* args body)
+  (if (no-operands? args)
+      (sequence->exp body)
+      (make-let (list (first-operand args))
+                (list (unfold-let* (rest-operands args) body)))))
+
+(define (let*->nested-lets expr)
+  (let ((args (let-args expr))
+        (body (let-body expr)))
+    (unfold-let* (let-args expr) (let-body expr))))
+
+(define (unfold-loops seq expr)
+  (if (while-exp? seq)
+      (list (make-if (while-pred seq) expr (list 'quote 'done)))
+      (cons (first-exp seq) (unfold-loops (rest-exps seq) expr))))
+
+(define (do-while->nested-loops expr)
+  (let ((actions (do-actions expr)))
+    (make-begin (unfold-loops actions expr))))
 
 (define (cond->if expr)
   (let ((clauses (cond-clauses expr)))
