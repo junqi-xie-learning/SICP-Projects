@@ -48,6 +48,12 @@
 (define rest-cond-clauses cdr)
 (define (make-cond seq) (cons 'cond seq))
 
+(define (case? exp) (tagged-list? exp 'case))
+(define (case-message exp) (cadr exp))
+(define (case-clauses exp) (cddr exp))
+(define (make-eq? message clause)
+  (append (list 'eq? message) clause))
+
 (define (let? expr) (tagged-list? expr 'let))
 (define (let*? expr) (tagged-list? expr 'let*))
 (define (let-bound-variables expr) (map first (second expr)))
@@ -72,6 +78,10 @@
 (define (do-actions do-exp) (cdr do-exp))
 (define (while-exp? exp) (tagged-list? exp 'while))
 (define (while-pred while-exp) (cadr while-exp))
+
+(define (until? exp) (tagged-list? exp 'until))
+(define (until-pred until-exp) (cadr until-exp))
+(define (until-actions until-exp) (cddr until-exp))
 
 (define (application? exp) (pair? exp))
 (define (operator app) (car app))

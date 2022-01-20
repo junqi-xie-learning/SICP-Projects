@@ -102,6 +102,7 @@
         (list '< <)
         (list '> >)
         (list '= =)
+        (list 'eq? eq?)
         (list 'display display)
         (list 'not not)
         (list 'newline newline)
