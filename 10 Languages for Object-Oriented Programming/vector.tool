@@ -2,15 +2,15 @@
 
 (define-method + ((v1 <vector>) (v2 <vector>))
   (make <vector>
-        (xcor (+ (get-slot v1 'xcor) (get-slot v2 'xcor)))
-        (ycor (+ (get-slot v1 'ycor) (get-slot v2 'ycor)))))
+        (xcor (+ (xcor v1) (xcor v2)))
+        (ycor (+ (ycor v1) (ycor v2)))))
 
 (define-method * ((v1 <vector>) (v2 <vector>))
-  (+ (* (get-slot v1 'xcor) (get-slot v2 'xcor))
-     (* (get-slot v1 'ycor) (get-slot v2 'ycor))))
+  (+ (* (xcor v1) (xcor v2))
+     (* (ycor v1) (ycor v2))))
 
 (define-method print ((v <vector>))
-  (print (cons (get-slot v 'xcor) (get-slot v 'ycor))))
+  (print (cons (xcor v) (ycor v))))
 
 ; some test cases:
 

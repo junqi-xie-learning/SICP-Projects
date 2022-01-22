@@ -153,21 +153,25 @@
 ;;; Body is the body for a procedure whose parameters are (p1 ... pn) 
 
 (define (eval-define-method exp env)
-  (let ((gf (tool-eval (method-definition-generic-function exp) env)))
-    (if (not (generic-function? gf))
-        (error "Unrecognized generic function -- DEFINE-METHOD >> "
-               (method-definition-generic-function exp))
-        (let ((params (method-definition-parameters exp)))
-          (install-method-in-generic-function
-           gf
-           (map (lambda (p) (paramlist-element-class p env))
-                params)
-           (make-procedure (make-lambda-expression
-                            (map paramlist-element-name params)
-                            (method-definition-body exp))
-                           env))
-          (list 'added 'method 'to 'generic 'function:
-                (generic-function-name gf))))))
+  (let ((name (method-definition-generic-function exp)))
+    (if (not (binding-in-env name env))
+        (let ((val (make-generic-function name)))
+          (define-variable! name val env)))
+    (let ((gf (tool-eval name env)))
+      (if (not (generic-function? gf))
+          (error "Unrecognized generic function -- DEFINE-METHOD >> "
+                 name)
+          (let ((params (method-definition-parameters exp)))
+            (install-method-in-generic-function
+             gf
+             (map (lambda (p) (paramlist-element-class p env))
+                  params)
+             (make-procedure (make-lambda-expression
+                              (map paramlist-element-name params)
+                              (method-definition-body exp))
+                             env))
+            (list 'added 'method 'to 'generic 'function:
+                  (generic-function-name gf)))))))
 
 
 ;;;;Install the method in the generic function:  The method consists
@@ -199,6 +203,17 @@
           (let ((new-class
                  (make-class name superclass all-slots)))
             (define-variable! name new-class env)
+            (define (define-method slot)
+              (if (not (binding-in-env slot env))
+                  (let ((val (make-generic-function slot)))
+                    (define-variable! slot val env)))
+              (let ((gf (tool-eval slot env)))
+                (install-method-in-generic-function
+                  gf (list (tool-eval name env))
+                  (make-procedure (make-lambda-expression '(x)
+                                   (list (list 'get-slot 'x (list 'quote slot))))
+                                  env))))
+            (map define-method (class-definition-slot-names exp))
             (list 'defined 'class: name))))))
 
 (define (collect-slots slot-names superclass)

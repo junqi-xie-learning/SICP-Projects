@@ -1,14 +1,11 @@
-(define-generic-function 4-legged?)
 (define-method 4-legged? ((x <object>))
   'Who-knows?)
-
-(define-generic-function say)
 
 (define-class <cat> <object> size breed)
 (define-method 4-legged? ((x <cat>))
   true)
 (define-method say ((cat <cat>) (stuff <object>))
-  (print 'meow:) ;print is TOOL's procedure for printing things
+  (print 'meow:)
   (print stuff))
 
 (define-class <house-cat> <cat> address)
@@ -24,6 +21,7 @@
 
 (define garfield (make <cat> (size 6) (breed 'weird)))
 (get-slot garfield 'breed)
+(breed garfield)
 (4-legged? garfield)
 (4-legged? 'Hal)
 
@@ -31,7 +29,6 @@
 (get-slot fluffy 'breed)
 (say garfield '(feed me))
 (say fluffy '(feed me))
-(say 'hal '(feed me))
 
 (define Cornelius-Silverspoon-the-Third
   (make <show-cat> 
