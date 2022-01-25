@@ -13,21 +13,21 @@ If you found any mistakes in the solutions, please create an issue or contact me
 
 ### Projects from MIT 6.001 (Spring 2005)
 
-* [x] Project 0
-* [x] Project 1: Those amazing Red Sox!
-* [x] Project 2: Prisoner's Dilemma
-* [x] Project 3: Crawling and Indexing the World Wide Web
-* [x] Project 4: The Object-Oriented Adventure Game
-* [x] Project 5: The Meta-Circular Evaluator
+* Project 0
+* Project 1: Those amazing Red Sox!
+* Project 2: Prisoner's Dilemma
+* Project 3: Crawling and Indexing the World Wide Web
+* Project 4: The Object-Oriented Adventure Game
+* Project 5: The Meta-Circular Evaluator
 
 ### Sample Projects from SICP
 
-* [x] Project 6: Term-rewriting Evaluator
-* [x] Project 7: Generic Arithmetic
-* [x] Project 8: Concurrency
-* [x] Project 9: Streams and Series
-* [x] Project 10: Languages for Object-Oriented Programming
-* [ ] Project 11: Register Machines and Compilation
+* Project 6: Term-rewriting Evaluator
+* Project 7: Generic Arithmetic
+* Project 8: Concurrency
+* Project 9: Streams and Series
+* Project 10: Languages for Object-Oriented Programming
+* Project 11: Register Machines and Compilation
 
 ## License
 
