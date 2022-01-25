@@ -49,7 +49,7 @@
             (cons (cdadr exp)                ;formal parameters
                   (cddr exp)))))        ;body
 
-
+
 ;;; LAMBDA expressions
 (define (lambda? exp) (tagged-list? exp 'lambda))
 (define (lambda-parameters lambda-exp) (cadr lambda-exp))
@@ -102,7 +102,7 @@
 (define (first-operand args) (car args))
 (define (rest-operands args) (cdr args))
 (define (last-operand? args) (null? (cdr args)))        ;for chapter 5
-
+
 ;;; COND Conditionals
 
 (define (cond? exp) (tagged-list? exp 'cond))
@@ -151,7 +151,7 @@
     (cons (list 'LAMBDA names body)
           values)))
 
-
+
 ;;; Declaration syntax for call-by-name interpreter
 
 (define declaration? pair?)
