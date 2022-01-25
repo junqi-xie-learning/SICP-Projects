@@ -14,6 +14,7 @@
 
 (define (variable? exp) (symbol? exp))
 (define (assignment? exp) (tagged-list? exp 'set!))
+(define (reversion? exp) (tagged-list? exp 'unset!))
 (define (assignment-variable exp) (cadr exp))
 (define (assignment-value exp) (caddr exp))
 (define (make-assignment var expr)
@@ -35,8 +36,9 @@
 (define (make-lambda parms body) (cons 'lambda (cons parms body)))
 
 (define (if? exp) (tagged-list? exp 'if))
-(define (if-predicate exp) (cadr exp)) 
-(define (if-consequent exp) (caddr exp)) 
+(define (if-predicate exp) (cadr exp))
+(define (if-consequent exp) (caddr exp))
+(define (if-alternative-clause exp) (cdddr exp))
 (define (if-alternative exp) (cadddr exp))
 (define (make-if pred conseq alt) (list 'if pred conseq alt))
 
@@ -46,9 +48,17 @@
 (define rest-cond-clauses cdr)
 (define (make-cond seq) (cons 'cond seq))
 
+(define (case? exp) (tagged-list? exp 'case))
+(define (case-message exp) (cadr exp))
+(define (case-clauses exp) (cddr exp))
+(define (make-eq? message clause)
+  (append (list 'eq? message) clause))
+
 (define (let? expr) (tagged-list? expr 'let))
+(define (let*? expr) (tagged-list? expr 'let*))
 (define (let-bound-variables expr) (map first (second expr)))
 (define (let-values expr) (map second (second expr)))
+(define (let-args expr) (cadr expr))
 (define (let-body expr) (cddr expr)) ;differs from lecture--body may be a sequence
 (define (make-let bindings body)
   (cons 'let (cons bindings body)))
@@ -63,6 +73,15 @@
         ((last-exp? seq) (first-exp seq))
         (else (make-begin seq))))
 (define (make-begin exp) (cons 'begin exp))
+
+(define (do-while? exp) (tagged-list? exp 'do))
+(define (do-actions do-exp) (cdr do-exp))
+(define (while-exp? exp) (tagged-list? exp 'while))
+(define (while-pred while-exp) (cadr while-exp))
+
+(define (until? exp) (tagged-list? exp 'until))
+(define (until-pred until-exp) (cadr until-exp))
+(define (until-actions until-exp) (cddr until-exp))
 
 (define (application? exp) (pair? exp))
 (define (operator app) (car app))

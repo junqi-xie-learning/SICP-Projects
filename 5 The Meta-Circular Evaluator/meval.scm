@@ -9,14 +9,20 @@
         ((variable? exp) (lookup-variable-value exp env))    
         ((quoted? exp) (text-of-quotation exp))
         ((assignment? exp) (eval-assignment exp env))
+        ((reversion? exp) (eval-reversion exp env))
         ((definition? exp) (eval-definition exp env))
         ((if? exp) (eval-if exp env))
         ((lambda? exp)
          (make-procedure (lambda-parameters exp) (lambda-body exp) env))
         ((begin? exp) (eval-sequence (begin-actions exp) env))
         ((cond? exp) (m-eval (cond->if exp) env))
+        ((case? exp) (m-eval (case->cond exp) env))
         ((let? exp) (m-eval (let->application exp) env))
-;        ((do-while? exp) (eval-do-while exp env))
+        ((let*? exp) (m-eval (let*->nested-lets exp) env))
+        ((do-while? exp) (m-eval (do-while->nested-loops exp) env))
+        ((until? exp) (m-eval (until->loops exp) env))
+        ((and? exp) (m-eval (and->if exp) env))
+        ((or? exp) (m-eval (or->if exp) env))
         ((application? exp)
          (m-apply (m-eval (operator exp) env)
                 (list-of-values (operands exp) env)))
@@ -41,7 +47,9 @@
 (define (eval-if exp env)
   (if (m-eval (if-predicate exp) env)
       (m-eval (if-consequent exp) env)
-      (m-eval (if-alternative exp) env)))
+      (if (null? (if-alternative-clause exp))
+          #f
+          (m-eval (if-alternative exp) env))))
 
 (define (eval-sequence exps env)
   (cond ((last-exp? exps) (m-eval (first-exp exps) env))
@@ -52,6 +60,10 @@
   (set-variable-value! (assignment-variable exp)
                        (m-eval (assignment-value exp) env)
                        env))
+
+(define (eval-reversion exp env)
+  (unset-variable-value! (assignment-variable exp)
+                         env))
 
 (define (eval-definition exp env)
   (define-variable! (definition-variable exp)
@@ -65,6 +77,61 @@
     (make-application (make-lambda names body)
                       values)))
 
+(define (let*->nested-lets expr)
+  (let ((args (let-args expr))
+        (body (let-body expr)))
+    (define (unfold-let* args)
+      (if (no-operands? args)
+          (sequence->exp body)
+          (make-let (list (first-operand args))
+                    (list (unfold-let* (rest-operands args))))))
+    (unfold-let* args)))
+
+(define (do-while->nested-loops expr)
+  (let ((seq (do-actions expr)))
+    (define (unfold-loops seq)
+      (if (while-exp? seq)
+          (list (make-if (while-pred seq) expr (list 'quote 'done)))
+          (cons (first-exp seq) (unfold-loops (rest-exps seq)))))
+    (make-begin (unfold-loops seq))))
+
+(define (until->loops expr)
+  (let* ((test (until-pred expr))
+         (other-exps (until-actions expr))
+         (names-occurring (names-used-in expr))
+         (loop-name (fresh-symbol names-occurring)))
+    (define loop
+      (make-define (list loop-name)
+        (make-if test (list 'quote 'done)
+          (make-begin (append other-exps (list (list loop-name)))))))
+    (make-let '() (list loop (list loop-name)))))
+
+(define (and->if expr)
+  (let ((exprs (and-exprs expr)))
+    (define (unfold-and exprs)
+      (if (last-exp? exprs)
+          (first-exp exprs)
+          (let ((first-expr (first-exp exprs))
+                (rest-exprs (rest-exps exprs)))
+            (make-if first-expr
+                     (unfold-and rest-exprs)
+                     #f))))
+    (unfold-and exprs)))
+
+(define (or->if expr)
+  (let* ((exprs (or-exprs expr))
+         (names-occurring (names-used-in expr))
+         (first-name (fresh-symbol names-occurring)))
+    (define (unfold-or exprs)
+      (if (last-exp? exprs)
+          (first-exp exprs)
+          (let ((first-expr (first-exp exprs))
+                (rest-exprs (rest-exps exprs)))
+            (make-let (list (list first-name first-expr))
+                      (list (make-if first-name first-name
+                                     (unfold-or rest-exprs)))))))
+    (unfold-or exprs)))
+
 (define (cond->if expr)
   (let ((clauses (cond-clauses expr)))
     (if (null? clauses)
@@ -74,6 +141,20 @@
             (make-if (car (first-cond-clause clauses))
                      (make-begin (cdr (first-cond-clause clauses)))
                      (make-cond (rest-cond-clauses clauses)))))))
+
+(define (case->cond expr)
+  (let* ((message (case-message expr))
+         (clauses (case-clauses expr))
+         (names-occurring (names-used-in expr))
+         (message-name (fresh-symbol names-occurring)))
+    (map (lambda (clause)
+           (let ((cond-clause (first-cond-clause clause)))
+             (if (list? cond-clause)
+               (set-car! clause 
+                         (make-eq? message-name cond-clause)))))
+         clauses)
+    (make-let (list (list message-name message))
+              (list (make-cond clauses)))))
 
 (define input-prompt ";;; M-Eval input:")
 (define output-prompt ";;; M-Eval value:")
@@ -99,31 +180,31 @@
 
 ;;;;;;;;;;;;;;;;;; Code For Problem 9 ;;;;;;;;;;;;;;;;;;;;;;
 
-      ; type: nil -> list<symbol>
+; type: nil -> list<symbol>
 (define (no-names)              ; builds an empty free list
   (list))
 
-      ; type: symbol -> list<symbol>
+; type: symbol -> list<symbol>
 (define (single-name var)       ; builds a free list of one variable
   (list var))
 
-      ; type: symbol, list<symbol> -> list<symbol>
+; type: symbol, list<symbol> -> list<symbol>
 (define (add-name var namelist) ; adds a variable to the list
   (if (not (memq var namelist)) ; avoiding adding duplicates
       (cons var namelist)
       namelist))
 
-      ; type: list<symbol>, list<symbol> -> list<symbol>
+; type: list<symbol>, list<symbol> -> list<symbol>
 (define (merge-names f1 f2)     ; if variable is free in either list
   (fold-right add-name f1 f2))  ; it's free in the result
 
-      ; type: list<expression> -> list<symbol>
+; type: list<expression> -> list<symbol>
 (define (used-in-sequence exps) ; this is like free-in,
   (fold-right merge-names       ; but works on a sequence of expressions
               (no-names) 
               (map names-used-in exps)))
 
-      ; type: list<symbol> -> symbol
+; type: list<symbol> -> symbol
 (define (fresh-symbol free)         ; computes a new symbol not occurring in free
   (fold-right symbol-append 'unused free))
 
@@ -133,57 +214,24 @@
 ; clauses here.
 
 ; type: expression -> list<symbol>
+; for simplicity, include keywords in the list as well
 (define (names-used-in exp)
-  (cond ((self-evaluating? exp) 
-         ... )
-        ((variable? exp) 
-         ... )
+  (cond ((self-evaluating? exp) (no-names))
+        ((variable? exp) (single-name exp))
         ((quoted? exp) (no-names))
-        ((assignment? exp) 
-         (merge-names (names-used-in (assignment-variable exp))
-                      (names-used-in (assignment-value exp))))
-;        ((unassignment? exp)
-;         ... )
-        ((definition? exp)
-         (merge-names (names-used-in (definition-variable exp))
-                      (names-used-in (definition-value exp))))
-        ((if? exp)
-         (merge-names (names-used-in (if-predicate exp))
-             (merge-names (names-used-in (if-consequent exp))
-                        (names-used-in (if-alternative exp)))))
-        ((lambda? exp)
-         ... )
-        ((begin? exp) (used-in-sequence (cdr exp)))
-        ((cond? exp) (names-used-in (cond->if exp)))
-        ((let? exp) (names-used-in (let->application exp)))
-;       ((let*? exp)
-;         ... )
-;        ((and? exp)
-;         ... )
-;        ((or? exp)
-;         ... )
-;        ((do-while? exp)
-;         ... )
-;        ((case? exp)
-;         ... )
-        ((application? exp)
-         (merge-names (names-used-in (operator exp))
-                      (used-in-sequence (operands exp))))
-        (else (error "Unknown expression type -- NAMES-USED-IN" exp))))
+        (else (used-in-sequence exp))))
 
-
-#|
-some test cases:
+; some test cases:
 
 (names-used-in
  '(do (display (* loop x x))
       (set! x (+ x 1))
     while (< x n)))
-;Value: (n < + x loop * display)
+;Value: (n < while + set! x loop * display do)
 
 (names-used-in
  '(lambda (x y) (+ 2 3)))
-;Value: (+ y x)
+;Value: (+ y x lambda)
 
 (names-used-in
  '(let* ((x 4)
@@ -191,11 +239,10 @@ some test cases:
     (if (or z (not z))
         (+ x y)
         7)))
-;Value: (+ not z val y x)
+;Value: (+ not z or if val y x let*)
 
-(fresh-symbol '(+ not z val y x))
-;Value: +notzvalyxunused
-|#
+(fresh-symbol '(+ not z or if val y x let*))
+;Value: +notzorifvalyxlet*unused
 
 ;;;;;;;;;;;;;;;;;;;;; edwin MAGIC - within the darkness magic lurks
 

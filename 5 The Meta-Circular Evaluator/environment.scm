@@ -24,7 +24,9 @@
 (define binding-value cadr)
 (define binding-search (association-procedure eq? car))
 (define (set-binding-value! binding val)
-  (set-car! (cdr binding) val))
+  (set-cdr! binding (cons val (cdr binding))))
+(define (unset-binding-value! binding)
+  (set-cdr! binding (cddr binding)))
 
 ; frames
 (define (make-frame variables values)
@@ -63,6 +65,15 @@
             (set-binding-value! binding val)
             (set-variable-value! var val (enclosing-environment env))))))
 
+(define (unset-variable-value! var env)
+  (if (eq? env the-empty-environment)
+      (error "Unbound variable -- LOOKUP" var)
+      (let* ((frame (first-frame env))
+             (binding (find-in-frame var frame)))
+        (if binding
+            (if (> (length binding) 2) (unset-binding-value! binding))
+            (unset-variable-value! var (enclosing-environment env))))))
+
 (define (define-variable! var val env)
   (warn-if-defined-in-regular-scheme var)
   (let* ((frame (first-frame env))
@@ -77,19 +88,25 @@
 (define (primitive-procedures)
   (list (list 'car car)
         (list 'cdr cdr)
+        (list 'cadr cadr)
+        (list 'cddr cddr)
         (list 'cons cons)
         (list 'set-car! set-car!)
         (list 'set-cdr! set-cdr!)
         (list 'null? null?)
+        (list 'list list)
+        (list 'length length)
         (list '+ +)
         (list '- -)
+        (list '* *)
         (list '< <)
         (list '> >)
         (list '= =)
+        (list 'eq? eq?)
         (list 'display display)
         (list 'not not)
-        ; ... more primitives
-        ))
+        (list 'newline newline)
+        (list 'write-line write-line)))
 
 (define (primitive-procedure-names) (map car (primitive-procedures)))
 
