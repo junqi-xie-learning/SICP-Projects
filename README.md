@@ -18,7 +18,7 @@ If you found any mistakes in the solutions, please create an issue or contact me
 * [x] Project 2: Prisoner's Dilemma
 * [x] Project 3: Crawling and Indexing the World Wide Web
 * [x] Project 4: The Object-Oriented Adventure Game
-* [ ] Project 5: The Meta-Circular Evaluator
+* [x] Project 5: The Meta-Circular Evaluator
 
 ### Sample Projects from SICP
 
