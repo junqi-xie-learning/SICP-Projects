@@ -26,7 +26,7 @@ If you found any mistakes in the solutions, please create an issue or contact me
 * [x] Project 7: Generic Arithmetic
 * [x] Project 8: Concurrency
 * [x] Project 9: Streams and Series
-* [ ] Project 10: Languages for Object-Oriented Programming
+* [x] Project 10: Languages for Object-Oriented Programming
 * [ ] Project 11: Register Machines and Compilation
 
 ## License
